@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Todo List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .rainbow-bg {
+            background: linear-gradient(to right, 
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff
+            );
+            animation: rainbow 5s linear infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="rainbow-bg p-1 rounded-lg shadow-lg">
+            <div class="bg-white p-6 rounded-lg">
+                <h1 class="text-3xl font-bold mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
+                    Rainbow Todo List
+                </h1>
+                
+                <div class="mb-4">
+                    <form id="todoForm" class="flex gap-2">
+                        <input type="text" id="todoInput" 
+                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500"
+                            placeholder="Add a new todo">
+                        <button type="submit" 
+                            class="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:opacity-90">
+                            Add
+                        </button>
+                    </form>
+                </div>
+
+                <ul id="todoList" class="space-y-2"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/';
+
+        async function fetchTodos() {
+            const response = await fetch(API_URL);
+            const todos = await response.json();
+            renderTodos(todos);
+        }
+
+        function renderTodos(todos) {
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = todos.map(todo => `
+                <li class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                        onclick="toggleTodo('${todo.id}')"
+                        class="w-5 h-5 text-purple-500">
+                    <span class="${todo.completed ? 'line-through text-gray-400' : ''} flex-1">
+                        ${todo.text}
+                    </span>
+                    <button onclick="deleteTodo('${todo.id}')"
+                        class="px-3 py-1 text-red-500 hover:bg-red-100 rounded">
+                        Delete
+                    </button>
+                </li>
+            `).join('');
+        }
+
+        async function addTodo(text) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            fetchTodos();
+        }
+
+        async function toggleTodo(id) {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchTodos();
+        }
+
+        async function deleteTodo(id) {
+            await fetch(API_URL, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchTodos();
+        }
+
+        document.getElementById('todoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+            if (text) {
+                addTodo(text);
+                input.value = '';
+            }
+        });
+
+        // Initial load
+        fetchTodos();
+    </script>
+</body>
+</html>
